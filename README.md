@@ -3,7 +3,7 @@
 
 
 
-## We use our packagist repo: https://packagist.org/packages/jacreditoh/cakephp-rest-api 
+## We use our packagist repo: https://packagist.org/packages/vudp/cakephp-rest-api 
 
 
 
