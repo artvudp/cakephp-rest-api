@@ -1,4 +1,4 @@
-# RestApi plugin for CakePHP 3
+# RestApi plugin for CakePHP 4
 
 
 
@@ -16,8 +16,8 @@ This plugin provides basic support for building REST API services in your CakePH
 ## Requirements
 This plugin has the following requirements:
 
-* CakePHP 3.0.0 or greater.
-* PHP 5.4.16 or greater.
+* CakePHP 4.2.2 or greater.
+* PHP 7.2 or greater.
 
 ## Installation
 You can install this plugin into your CakePHP application using [composer](http://getcomposer.org).
