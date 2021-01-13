@@ -5,6 +5,7 @@
     "type": "cakephp-plugin",
     "homepage": "https://github.com/cakephp/debug_kit",
     "license": "MIT",
+	"minimum-stability": "dev",
     "authors": [
         {
             "name": "Creditoh",
