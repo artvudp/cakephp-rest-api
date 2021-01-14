@@ -2,6 +2,7 @@
 
 namespace RestApi\Error;
 
+use Cake\Controller\Controller;
 use Cake\Core\Configure;
 use Cake\Error\ExceptionRenderer;
 use Cake\Network\Response;
@@ -25,7 +26,7 @@ class ApiExceptionRenderer extends ExceptionRenderer
      *
      * @return ApiErrorController
      */
-    protected function _getController()
+    protected function _getController(): Controller
     {
         return new ApiErrorController();
     }
@@ -39,6 +40,7 @@ class ApiExceptionRenderer extends ExceptionRenderer
      */
     public function missingToken($exception)
     {
+        //called from ExceptionRenderer.php by render function
         return $this->__prepareResponse($exception, ['customMessage' => true]);
     }
 
@@ -51,6 +53,7 @@ class ApiExceptionRenderer extends ExceptionRenderer
      */
     public function invalidTokenFormat($exception)
     {
+        //called from ExceptionRenderer.php by render function
         return $this->__prepareResponse($exception, ['customMessage' => true]);
     }
 
@@ -63,6 +66,7 @@ class ApiExceptionRenderer extends ExceptionRenderer
      */
     public function invalidToken($exception)
     {
+        //called from ExceptionRenderer.php by render function
         return $this->__prepareResponse($exception, ['customMessage' => true]);
     }
 
@@ -75,21 +79,17 @@ class ApiExceptionRenderer extends ExceptionRenderer
      * @return Response
      */
     private function __prepareResponse($exception, $options = [])
-    {
-        $response = $this->_getController()->response;
-        $code = $this->_code($exception);
-        $response->getStatusCode($this->_code($exception));
-
-        Configure::write('apiExceptionMessage', $exception->getMessage());
-
+    { 
+        $response = $this->_getController()->getResponse();
         $responseFormat = $this->_getController()->responseFormat;
+        Configure::write('apiExceptionMessage', $exception->getMessage());
         $responseData = [
             $responseFormat['statusKey'] => !empty($options['responseStatus']) ? $options['responseStatus'] : $responseFormat['statusNokText'],
             $responseFormat['resultKey'] => [
-                $responseFormat['errorKey'] => ($code < 500) ? 'Not Found' : 'An Internal Error Has Occurred.',
+                $responseFormat['errorKey'] => ($response->getStatusCode() < 500) ? 'Not Found' : 'An Internal Error Has Occurred.',
             ],
         ];
-
+        
         if ((isset($options['customMessage']) && $options['customMessage']) || Configure::read('ApiRequest.debug')) {
             $responseData[$responseFormat['resultKey']][$responseFormat['errorKey']] = $exception->getMessage();
         }
@@ -103,7 +103,6 @@ class ApiExceptionRenderer extends ExceptionRenderer
             $body->write(json_encode($responseData));
             $response->withBody($body);
         }
-
         $this->controller->response = $response;
 
         return $response;

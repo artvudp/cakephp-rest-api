@@ -1,17 +1,16 @@
-# RestApi plugin for CakePHP 4
+# RestApi plugin for CakePHP 4.2.2
 
 
 
 
-## We use our packagist repo: https://packagist.org/packages/vudp/cakephp-rest-api 
+## Our packagist repo: https://packagist.org/packages/vudp/cakephp-rest-api
 
 
 
 
 
 
-
-This plugin provides basic support for building REST API services in your CakePHP 3 application. Read a detailed guide on how to implement this here - [CakePHP: Build REST APIs with RestApi plugin](http://blog.narendravaghela.com/cakephp-build-rest-apis-with-restapi-plugin-part-1/)
+This plugin provides basic support for building REST API services in your CakePHP 4 application. Read a detailed guide on how to implement below.
 
 ## Requirements
 This plugin has the following requirements:
@@ -22,57 +21,54 @@ This plugin has the following requirements:
 ## Installation
 You can install this plugin into your CakePHP application using [composer](http://getcomposer.org).
 
-The recommended way to install composer packages is:
+After that, you can setup our package by standing at orginal folder of your project and running
 ```
 composer require vudp/cakephp-rest-api
 ```
 After installation, [Load the plugin](http://book.cakephp.org/3.0/en/plugins.html#loading-a-plugin)
 ```php
-Plugin::load('RestApi', ['bootstrap' => true]);
+$this->addPlugin('RestApi');
 ```
 Or, you can load the plugin using the shell command
 ```sh
-$ bin/cake plugin load -b RestApi
+$ bin/cake plugin load RestApi
+```
+
+The complete code of "bootstrap" function at src/Application.php where you just added your RestApi plugin.
+```
+ public function bootstrap(): void
+    {
+        $this->addPlugin('RestApi');
+
+        // Call parent to load bootstrap from files.
+        parent::bootstrap();
+
+        if (PHP_SAPI === 'cli') {
+            $this->bootstrapCli();
+        } else {
+            FactoryLocator::add(
+                'Table',
+                (new TableLocator())->allowFallbackClass(false)
+            );
+        }
+
+        /*
+         * Only try to load DebugKit in development mode
+         * Debug Kit should not be installed on a production system
+         */
+        if (Configure::read('debug')) {
+            $this->addPlugin('DebugKit');
+        }
+
+        // Load more plugins here
+    }
 ```
 ## Usage
-You just need to create your API related controller and extend it to `ApiController` instead of default `AppController`.  You just need to set you results in `apiResponse` variable and your response code in `httpStatusCode` variable. For example,
-```php
-namespace App\Controller;
-
-use RestApi\Controller\ApiController;
-
-/**
- * Foo Controller
- */
-class FooController extends ApiController
-{
-
-    /**
-     * bar method
-     *
-     */
-    public function bar()
-    {
-	// your action logic
-
-	// Set the HTTP status code. By default, it is set to 200
-	$this->httpStatusCode = 200;
-
-	// Set the response
-        $this->apiResponse['you_response'] = 'your response data';
-    }
-}
-```
-You can define your logic in your action function as per your need. For above example, you will get following response in `json` format,
-```json
-{"status":"OK","result":{"you_response":"your response data"}}
-```
-The URL for above example will be `http://yourdomain.com/foo/bar`. You can customize it by setting the routes in `APP/config/routes.php`.
-
-Simple :)
+You just need to create your API related controller and extend it to `ApiController` instead of default `AppController`.
 
 ## Configurations
-This plugin provides several configuration related to Response Format, `CORS` , Request Logging and `JWT` authentication. The default configurations are as below and defined in `RestApi/config/api.php`.
+The default configurations are as below and defined in `RestApi/config/api.php`.
+
 ```php
 <?php
 
@@ -109,65 +105,18 @@ return [
     ]
 ];
 ```
+
 ### Debug
 Set `debug` to true in your development environment to get original exception messages in response.
 
 ### Response format
 It supports `json` and `xml` formats. The default response format is `json`. Set `responseType` to change your response format. In case of `xml` format, you can set the root element name by `xmlResponseRootNode` parameter.
 
-### Request authentication using JWT
-You can check for presence of auth token in API request. By default it is enabled. You need to define a flag `allowWithoutToken` to `true` or `false`. For example,
-```php
-$routes->connect('/demo/foo', ['controller' => 'Demo', 'action' => 'foo', 'allowWithoutToken' => false]);
-```
-Above API method will require auth token in request. You can pass the auth token in either header, in GET parameter or in POST field.
-
 If you want to pass token in header, use below format.
 ```php
 Authorization: Bearer [token]
 ```
 In case of GET or POST parameter, pass the token in `token` parameter.
-
-#### Generate jwt token
-This plugin provides Utility class to generate jwt token and sign with same key and algorithm. Use `JwtToken::generate()` method wherever required. Most probably, you will need this in user login and register API. See below example,
-```php
-<?php
-
-namespace App\Controller;
-
-use RestApi\Controller\ApiController;
-use RestApi\Utility\JwtToken;
-
-/**
- * Account Controller
- *
- */
-class AccountController extends ApiController
-{
-
-    /**
-     * Login method
-     *
-     * Returns a token on successful authentication
-     *
-     * @return void|\Cake\Network\Response
-     */
-    public function login()
-    {
-        $this->request->allowMethod('post');
-
-        /**
-         * process your data and validate it against database table
-         */
-
-	// generate token if valid user
-	$payload = ['email' => $user->email, 'name' => $user->name];
-
-        $this->apiResponse['token'] = JwtToken::generateToken($payload);
-        $this->apiResponse['message'] = 'Logged in successfully.';
-    }
-}
-```
 
 ### cors
 By default, cors requests are enabled and allowed from all domains. You can overwrite these settings by creating config file at `APP/config/api.php`. The content of file will look like,
@@ -234,18 +183,6 @@ Or you can use the `bake` command to automatically generate the above table.
 $ bin/cake migrations migrate --plugin RestApi
 ```
 
-#### Log only error responses
-Sometimes, it is not necessary to log each and every request and response. We just want to log the request and response in case of error only. For that, you can set the additional settings using `logOnlyErrors` option.
-
-```php
-'logOnlyErrors' => true, // it will log only errors
-'logOnlyErrorCodes' => [404, 500], // Specify the response codes to consider
-```
-
-> If the `logOnlyErrors` is set, this will only log the request and response which are not equals to 200 OK.
-> You can specify to log the request for only specific response code. You can specify the response codes in `logOnlyErrorCodes` option in array format.
-> This will only work if the `log` option is set to `true`
-
 ## Response format
 The default response format of API is `json` and its structure is defined as below.
 ```json
@@ -273,125 +210,312 @@ In case of `xml` format, the response structure will look like,
 ## Examples
 Below are few examples to understand how this plugin works.
 
-### Retrieve articles
-Let's create an API which returns a list of articles with basic details like id and title. Our controller will look like,
-```php
-<?php
+Register API
 
+Route: /api/register
+
+Params
+- email: join.nguyen@gmail.com
+- password: 123456
+- name: Jose Nguyen
+
+Login API
+
+Route: /api/login
+
+Params
+- email: join.nguyen@gmail.com
+- password: 123456
+
+### Controller > AuthController to support for certificate of log-in and registration
+
+```
+<?php
+declare(strict_types=1);
 namespace App\Controller;
 
 use RestApi\Controller\ApiController;
+use RestApi\Utility\JwtToken;
 
 /**
- * Articles Controller
- *
- * @property \App\Model\Table\ArticlesTable $Articles
- */
-class ArticlesController extends ApiController
-{
-
-    /**
-     * index method
-     *
-     */
-    public function index()
-    {
-        $articles = $this->Articles->find('all')
-            ->select(['id', 'title'])
-            ->toArray();
-
-        $this->apiResponse['articles'] = $articles;
-    }
-}
-```
-The response of above API call will look like,
-```json
-{
-  "status": "OK",
-  "result": {
-    "articles": [
-      {
-        "id": 1,
-        "title": "Lorem ipsum"
-      },
-      {
-        "id": 2,
-        "title": "Donec hendrerit"
-      }
-    ]
-  }
-}
-```
-### Exception handling
-This plugin will handle the exceptions being thrown from your action. For example, if you API method only allows `POST` method and someone makes a `GET` request, it will generate `NOK` response with proper HTTP response code. For example,
-```php
-<?php
-
-namespace App\Controller;
-
-use RestApi\Controller\ApiController;
-
-/**
- * Foo Controller
+ * AuthController Controller
  *
  */
-class FooController extends ApiController
+class AuthController extends ApiController
 {
-
     /**
-     * bar method
+     * Login method
      *
+     * @return void
      */
-    public function restricted()
+    public function login()
     {
         $this->request->allowMethod('post');
-        // your other logic will be here
-        // and finally set your response
-        // $this->apiResponse['you_response'] = 'your response data';
+        $this->loadModel('Users');
+        $entity = $this->Users->newEntity($_REQUEST, ['validate' => 'LoginApi']);
+
+        if ($entity->getErrors()) {
+                $this->httpStatusCode = 400;
+                $this->apiResponse['message'] = 'Validation failed.';
+                foreach ($entity->errors() as $field => $validationMessage) {
+                    $this->apiResponse['error'][$field] = $validationMessage[key($validationMessage)];
+                }
+            } else {
+                $user = $this->Users->find()
+                    ->where([
+                        'email' => $entity->email,
+                        'password' => md5($entity->password),
+                        'status' => 1
+                    ])
+                    ->first();
+        if (empty($user)) {
+                    $this->httpStatusCode = 403;
+                    $this->apiResponse['error'] = 'Invalid email or password.';
+        return;
+                }
+        $payload = ['email' => $user->email, 'name' => $user->name];
+        $this->apiResponse['token'] = JwtToken::generateToken($payload);
+                $this->apiResponse['message'] = 'Logged in successfully.';
+        unset($user);
+                unset($payload);
+            }
     }
-}
-```
-The response will look like,
-```json
-{"status":"NOK","result":{"message":"Method Not Allowed"}}
-```
-Another example of throwing an exception,
-```php
-<?php
 
-namespace App\Controller;
-
-use Cake\Network\Exception\NotFoundException;
-use RestApi\Controller\ApiController;
-
-/**
- * Foo Controller
- *
- */
-class FooController extends ApiController
-{
-
-    /**
-     * error method
+        /**
+     * Register method
      *
+     * Returns a token on successful registration
+     *
+     * @return void
      */
-    public function error()
+    public function register()
     {
-        $throwException = true;
+        $this->request->allowMethod('post');
 
-        if ($throwException) {
-            throw new NotFoundException();
+        $this->loadModel('Users');
+
+        $user = $this->Users->newEntity($_REQUEST);
+
+        try {
+            if ($this->Users->save($user)) {
+
+                $this->apiResponse['message'] = 'Registered successfully.';
+                $payload = ['email' => $user->email, 'name' => $user->name];
+                $this->apiResponse['token'] = JwtToken::generateToken($payload);
+            } else {
+                $this->httpStatusCode = 400;
+                $this->apiResponse['message'] = 'Unable to register user.';
+                if ($user->errors()) {
+                    $this->apiResponse['message'] = 'Validation failed.';
+                    foreach ($user->errors() as $field => $validationMessage) {
+                        $this->apiResponse['error'][$field] = $validationMessage[key($validationMessage)];
+                    }
+                }
+            }
+        } catch (Exception $e) {
+            $this->httpStatusCode = 400;
+            $this->apiResponse['message'] = 'Unable to register user.';
         }
 
-        // your other logic will be here
-        // and finally set your response
-        // $this->apiResponse['you_response'] = 'your response data';
+        unset($user);
+        unset($payload);
     }
 }
 ```
-And the response will be,
-```json
-{"status":"NOK","result":{"message":"Not Found"}}
+
+### Model > Table > UsersTable.php
+
 ```
-## Reporting Issues
-If you have a problem with this plugin or any bug, please open an issue on [GitHub](https://github.com/multidots/cakephp-rest-api/issues).
+<?php
+declare(strict_types=1);
+
+namespace App\Model\Table;
+
+use Cake\ORM\Query;
+use Cake\ORM\RulesChecker;
+use Cake\ORM\Table;
+use Cake\Validation\Validator;
+use Cake\Event\Event;
+use Cake\Datasource\EntityInterface;
+use ArrayObject;
+
+/**
+ * Users Model
+ *
+ * @method \App\Model\Entity\User newEmptyEntity()
+ * @method \App\Model\Entity\User newEntity(array $data, array $options = [])
+ * @method \App\Model\Entity\User[] newEntities(array $data, array $options = [])
+ * @method \App\Model\Entity\User get($primaryKey, $options = [])
+ * @method \App\Model\Entity\User findOrCreate($search, ?callable $callback = null, $options = [])
+ * @method \App\Model\Entity\User patchEntity(\Cake\Datasource\EntityInterface $entity, array $data, array $options = [])
+ * @method \App\Model\Entity\User[] patchEntities(iterable $entities, array $data, array $options = [])
+ * @method \App\Model\Entity\User|false save(\Cake\Datasource\EntityInterface $entity, $options = [])
+ * @method \App\Model\Entity\User saveOrFail(\Cake\Datasource\EntityInterface $entity, $options = [])
+ * @method \App\Model\Entity\User[]|\Cake\Datasource\ResultSetInterface|false saveMany(iterable $entities, $options = [])
+ * @method \App\Model\Entity\User[]|\Cake\Datasource\ResultSetInterface saveManyOrFail(iterable $entities, $options = [])
+ * @method \App\Model\Entity\User[]|\Cake\Datasource\ResultSetInterface|false deleteMany(iterable $entities, $options = [])
+ * @method \App\Model\Entity\User[]|\Cake\Datasource\ResultSetInterface deleteManyOrFail(iterable $entities, $options = [])
+ *
+ * @mixin \Cake\ORM\Behavior\TimestampBehavior
+ */
+class UsersTable extends Table
+{
+    /**
+     * Initialize method
+     *
+     * @param array $config The configuration for the Table.
+     * @return void
+     */
+    public function initialize(array $config): void
+    {
+        parent::initialize($config);
+
+        $this->setTable('users');
+        $this->setDisplayField('name');
+        $this->setPrimaryKey('id');
+        $this->addBehavior('Timestamp');
+    }
+
+    /**
+     * Default validation rules.
+     *
+     * @param \Cake\Validation\Validator $validator Validator instance.
+     * @return \Cake\Validation\Validator
+     */
+    public function validationDefault(Validator $validator): Validator
+    {
+
+        $validator
+            ->allowEmptyString('id', null, 'create');
+
+        $validator
+            ->scalar('name')
+            ->maxLength('name', 255)
+            ->requirePresence('name', 'create')
+            ->notEmptyString('name');
+
+        $validator
+            ->email('email')
+            ->requirePresence('email', 'create')
+            ->notEmptyString('email');
+
+        $validator
+            ->scalar('password')
+            ->maxLength('password', 50)
+            ->requirePresence('password', 'create')
+            ->notEmptyString('password');
+
+        $validator
+            ->boolean('status')
+            ->notEmptyString('status');
+
+        return $validator;
+    }
+
+    public function validationLoginApi(Validator $validator): Validator
+    {
+
+        $validator
+            ->email('email')
+            ->requirePresence('email', 'create')
+            ->notEmptyString('email');
+
+        $validator
+            ->scalar('password')
+            ->maxLength('password', 50)
+            ->requirePresence('password', 'create')
+            ->notEmptyString('password');
+
+        return $validator;
+    }
+
+    /**
+     * Returns a rules checker object that will be used for validating
+     * application integrity.
+     *
+     * @param \Cake\ORM\RulesChecker $rules The rules object to be modified.
+     * @return \Cake\ORM\RulesChecker
+     */
+    public function buildRules(RulesChecker $rules): RulesChecker
+    {
+        $rules->add($rules->isUnique(['email']), ['errorField' => 'email']);
+        return $rules;
+    }
+
+    /**
+     * Modifies password before saving into database
+     *
+     * @param Event $event Event
+     * @param EntityInterface $entity Entity
+     * @param ArrayObject $options Array of options
+     * @return bool
+     */
+    public function beforeSave(Event $event, EntityInterface $entity, ArrayObject $options)
+    {
+        if (isset($entity->password)) {
+            $entity->password = md5($entity->password);
+        }
+
+        return true;
+    }
+}
+```
+
+### Model > Entity > User.php
+
+```
+<?php
+declare(strict_types=1);
+
+namespace App\Model\Entity;
+
+use Cake\ORM\Entity;
+
+/**
+ * User Entity
+ *
+ * @property int $id
+ * @property string $name
+ * @property string $email
+ * @property string $password
+ * @property bool $status
+ * @property \Cake\I18n\FrozenTime $created
+ * @property \Cake\I18n\FrozenTime $modified
+ */
+class User extends Entity
+{
+    /**
+     * Fields that can be mass assigned using newEntity() or patchEntity().
+     *
+     * Note that when '*' is set to true, this allows all unspecified fields to
+     * be mass assigned. For security purposes, it is advised to set '*' to false
+     * (or remove it), and explicitly make individual fields accessible as needed.
+     *
+     * @var array
+     */
+    protected $_accessible = [
+        'name' => true,
+        'email' => true,
+        'password' => true,
+        'status' => true,
+        'created' => true,
+        'modified' => true,
+    ];
+
+    /**
+     * Fields that are excluded from JSON versions of the entity.
+     *
+     * @var array
+     */
+    protected $_hidden = [
+        'password',
+    ];
+}
+```
+
+### Routing
+
+```
+$builder->connect('/api/login', 'Auth::login');
+$builder->connect('/api/register', 'Auth::register');
+```

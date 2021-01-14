@@ -2,7 +2,7 @@
 
 namespace RestApi\Controller;
 
-use Cake\Event\Event;
+use Cake\Event\EventInterface;
 
 /**
  * Api Controller
@@ -11,17 +11,15 @@ use Cake\Event\Event;
  */
 class ApiController extends AppController
 {
-
     /**
      * Before render callback.
      *
      * @param Event $event The beforeRender event.
      * @return \Cake\Network\Response|null
      */
-    public function beforeRender(Event $event)
+    public function beforeRender(EventInterface $event)
     {
         $this->viewBuilder()->setClassName('RestApi.Api');
-
         return parent::beforeRender($event);
     }
 }

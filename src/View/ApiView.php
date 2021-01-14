@@ -26,7 +26,7 @@ class ApiView extends View
      *
      * @return void
      */
-    public function initialize()
+    public function initialize(): void
     {
         parent::initialize();
 
@@ -39,16 +39,32 @@ class ApiView extends View
     }
 
     /**
-     * Renders api response
+     * Renders view for given template file and layout.
      *
-     * @param string|null $view Name of view file to use
-     * @param string|null $layout Layout to use.
-     * @return string|null Rendered content or null if content already rendered and returned earlier.
-     * @throws Exception If there is an error in the view.
+     * Render triggers helper callbacks, which are fired before and after the template are rendered,
+     * as well as before and after the layout. The helper callbacks are called:
+     *
+     * - `beforeRender`
+     * - `afterRender`
+     * - `beforeLayout`
+     * - `afterLayout`
+     *
+     * If View::$autoLayout is set to `false`, the template will be returned bare.
+     *
+     * Template and layout names can point to plugin templates or layouts. Using the `Plugin.template` syntax
+     * a plugin template/layout/ can be used instead of the app ones. If the chosen plugin is not found
+     * the template will be located along the regular view path cascade.
+     *
+     * @param string|null $template Name of template file to use
+     * @param string|false|null $layout Layout to use. False to disable.
+     * @return string Rendered content.
+     * @throws \Cake\Core\Exception\CakeException If there is an error in the view.
+     * @triggers View.beforeRender $this, [$templateFileName]
+     * @triggers View.afterRender $this, [$templateFileName]
      */
-    public function render($view = null, $layout = null)
+    public function render(?string $template = null, $layout = null): string
     {
-        if ($this->hasRendered) {
+        if (isset($this->hasRendered) && $this->hasRendered) {
             return null;
         }
 

@@ -11,6 +11,7 @@ use Firebase\JWT\JWT;
 use RestApi\Routing\Exception\InvalidTokenException;
 use RestApi\Routing\Exception\InvalidTokenFormatException;
 use RestApi\Routing\Exception\MissingTokenException;
+use Cake\Routing\Router;
 
 /**
  * Access control component class.
@@ -46,15 +47,15 @@ class AccessControlComponent extends Component
      */
     protected function _performTokenValidation(Event $event)
     {
-        $request = $event->getSubject()->request;
+        $this->request = Router::getRequest();
 
-        if (!empty($request->getParam('allowWithoutToken')) && $request->getParam('allowWithoutToken')) {
+        if (!empty($this->request->getParam('allowWithoutToken')) && $this->request->getParam('allowWithoutToken')) {
             return true;
         }
 
         $token = '';
 
-        $header = $request->getHeader('Authorization');
+        $header = $this->request->getHeader('Authorization');
 
         if (!empty($header[0])) {
             $parts = explode(' ', $header[0]);
@@ -66,8 +67,8 @@ class AccessControlComponent extends Component
             $token = $parts[1];
         } elseif (!empty($this->request->getQuery('token'))) {
             $token = $this->request->getQuery('token');
-        } elseif (!empty($request->getParam('token'))) {
-            $token = $request->getParam('token');
+        } elseif (!empty($this->request->getParam('token'))) {
+            $token = $this->request->getParam('token');
         } else {
             throw new MissingTokenException();
         }

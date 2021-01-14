@@ -26,7 +26,7 @@ class ApiErrorView extends View
      *
      * @return void
      */
-    public function initialize()
+    public function initialize(): void
     {
         parent::initialize();
 
@@ -46,7 +46,7 @@ class ApiErrorView extends View
      * @return string|null Rendered content or null if content already rendered and returned earlier.
      * @throws Exception If there is an error in the view.
      */
-    public function render($view = null, $layout = null)
+    public function render(?string $template = null, $layout = null): string
     {
         if ($this->hasRendered) {
             return null;

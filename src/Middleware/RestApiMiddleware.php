@@ -7,19 +7,20 @@ use Cake\Error\Middleware\ErrorHandlerMiddleware;
 use Cake\Event\EventManager;
 use Cake\Utility\Inflector;
 use RestApi\Event\ApiRequestHandler;
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Server\RequestHandlerInterface;
+use Psr\Http\Message\ResponseInterface;
 
 class RestApiMiddleware extends ErrorHandlerMiddleware
 {
-
     /**
-     * Override ErrorHandlerMiddleware and add custom exception renderer
+     * Wrap the remaining middleware with error handling.
      *
      * @param \Psr\Http\Message\ServerRequestInterface $request The request.
-     * @param \Psr\Http\Message\ResponseInterface $response The response.
-     * @param callable $next Callback to invoke the next middleware.
-     * @return \Psr\Http\Message\ResponseInterface A response
+     * @param \Psr\Http\Server\RequestHandlerInterface $handler The request handler.
+     * @return \Psr\Http\Message\ResponseInterface A response.
      */
-    public function __invoke($request, $response, $next)
+    public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         try {
             $params = (array)$request->getAttribute('params', []);
@@ -31,29 +32,34 @@ class RestApiMiddleware extends ErrorHandlerMiddleware
                     strpos($controllerName, '.') !== false ||
                     $firstChar === strtolower($firstChar)
                 ) {
-                    return $next($request, $response);
+                    return $handler->handle($request);
                 }
                 $type = 'Controller';
+                
                 if (isset($params['prefix']) && $params['prefix']) {
                     $prefix = Inflector::camelize($params['prefix']);
                     $type = 'Controller/' . $prefix;
                 }
                 $className = App::className($controllerName, $type, 'Controller');
+                
                 $controller = ($className) ? new $className() : null;
+                
                 if ($controller && is_subclass_of($controller, 'RestApi\Controller\ApiController')) {
+                    
                     if (isset($this->renderer)) {
-                        $this->renderer = 'RestApi\Error\ApiExceptionRenderer';
+                        $this->_config['renderer'] = 'RestApi\Error\ApiExceptionRenderer';
                     } else {
-                        $this->exceptionRenderer = 'RestApi\Error\ApiExceptionRenderer';
+                        $this->_config['exceptionRenderer'] = 'RestApi\Error\ApiExceptionRenderer';
                     }
+                    
                     EventManager::instance()->on(new ApiRequestHandler());
                 }
                 unset($controller);
             }
 
-            return $next($request, $response);
+            return $handler->handle($request);
         } catch (\Exception $e) {
-            return $this->handleException($e, $request, $response);
+            return $this->handleException($e, $request);
         }
     }
 }

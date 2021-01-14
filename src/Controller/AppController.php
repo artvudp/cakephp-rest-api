@@ -4,7 +4,7 @@ namespace RestApi\Controller;
 
 use Cake\Controller\Controller;
 use Cake\Core\Configure;
-use Cake\Event\Event;
+use Cake\Event\EventInterface;
 
 /**
  * Application Controller
@@ -60,10 +60,9 @@ class AppController extends Controller
      *
      * @return void
      */
-    public function initialize()
+    public function initialize(): void
     {
         parent::initialize();
-
         $this->responseFormat = [
             'statusKey' => (null !== Configure::read('ApiRequest.responseFormat.statusKey')) ? Configure::read('ApiRequest.responseFormat.statusKey') : 'status',
             'statusOkText' => (null !== Configure::read('ApiRequest.responseFormat.statusOkText')) ? Configure::read('ApiRequest.responseFormat.statusOkText') : 'OK',
@@ -87,7 +86,7 @@ class AppController extends Controller
      * @param Event $event The beforeRender event.
      * @return \Cake\Network\Response|null
      */
-    public function beforeRender(Event $event)
+    public function beforeRender(EventInterface $event)
     {
         parent::beforeRender($event);
 
